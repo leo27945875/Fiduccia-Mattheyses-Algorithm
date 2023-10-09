@@ -1,0 +1,437 @@
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <limits>
+
+#include "include/structure.hpp"
+#include "include/partition.hpp"
+#include "include/utils.hpp"
+
+
+FMAlgo::FMAlgo(std::string inputFile){
+    readInputData("data/input0.txt");
+    seperateGroups();
+    buildNPinMaxInfo();
+    buildGainArray();
+
+#if DEBUG == 1
+    END_LINE;
+    LOG("===================== FM Algo Init Info =====================\n");
+    printNetsInfo();
+    printCellsInfo();
+    printGroupsInfo();
+    printGainsInfo();
+    printLinksInfo();
+    DDASH_LINE;
+    END_LINE;
+#endif
+}
+
+FMAlgo::~FMAlgo(){
+
+}
+
+void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
+    LOG("\nStart running ... \n");
+    unsigned int innerLoop, outerLoop = 1;
+    while (outerLoop <= maxLoop){
+        OUTER_LOOP_START(outerLoop);
+        innerLoop = 1;
+        while (m_gains.isHasCell()){
+            INNER_LOOP_START(innerLoop);
+            
+            Cell *cell = decideWhichCellToMove();
+            if (cell == nullptr) // No free cell satisfies the balance constraint.
+                break;
+
+            MOVE_INFO(cell);
+            moveCell(cell);
+            innerLoop++;
+
+#if DEBUG == 1
+            END_LINE;
+            printNetsInfo();
+            printCellsInfo();
+            printGroupsInfo();
+            printGainsInfo();
+            printLinksInfo();
+            END_LINE;
+#endif
+        }
+
+#if DEBUG == 1
+        DDASH_LINE;
+        printMovesInfo();
+#endif
+        findMaxGainKthMove(m_kthMove, m_MaxCumGain);
+        replay(m_kthMove);
+        buildGainArray();
+
+#if DEBUG == 1
+        LOGKV("Max Move", m_kthMove);
+        LOGKV("Max CumGain", m_MaxCumGain); END_LINE;
+        printNetsInfo();
+        printCellsInfo();
+        printGroupsInfo();
+        printGainsInfo();
+        printLinksInfo();
+#endif
+        if (m_MaxCumGain <= 0) break;
+        else{
+            outerLoop++;
+            m_moveRecords.clear();
+        }
+
+    }
+
+    LOGKV("\nStop, total loop", outerLoop);
+    if (outputFile.size() > 0)
+        outputResult(outputFile, m_kthMove);
+}
+
+void FMAlgo::readInputData(std::string inputFile){
+    // Purely build cell & net vector from file:
+    std::ifstream fp(inputFile);
+    std::string line, word;
+    int maxCellNumber = 0, maxNetNumber = 0;
+    while (getline(fp, line)){
+        std::stringstream ss(line);
+        Cell *nowCell = nullptr;
+        Net  *nowNet  = nullptr;
+        int wordCount = 0;
+        while (ss >> word)
+        {
+            if (word == ";") break;
+            if (wordCount == 0){
+                if (word != "NET")
+                    m_balanceRatio = std::stof(word);
+            }
+            else if (wordCount == 1){
+                int netNumber = std::stoi(word.substr(1));
+                if (netNumber > maxNetNumber){
+                    maxNetNumber = netNumber;
+                    m_nets.resize(maxNetNumber);
+                }
+                if (m_nets[netNumber - 1] == nullptr)
+                    m_nets[netNumber - 1] = new Net();
+
+                nowNet = m_nets[netNumber - 1];
+                nowNet->m_number = netNumber;
+            }
+            else{
+                int cellNumber = std::stoi(word.substr(1));
+                if (cellNumber > maxCellNumber){
+                    maxCellNumber = cellNumber;
+                    m_cells.resize(maxCellNumber);
+                }
+                if (m_cells[cellNumber - 1] == nullptr)
+                    m_cells[cellNumber - 1] = new Cell();
+                    
+                nowCell = m_cells[cellNumber - 1];
+                nowNet->addCell(nowCell);
+                nowCell->addNet(nowNet);
+                nowCell->m_number = cellNumber;
+                nowCell->m_nPin++;
+            }
+            wordCount++;
+        }
+    }
+    fp.close();
+
+    // Move recorder:
+    m_moveRecords.reserve(m_cells.size());
+}
+
+void FMAlgo::outputResult(std::string &outputFile, int kthMove){
+    std::ofstream fp(outputFile);
+    fp << "Cutsize = " << m_moveRecords[kthMove - 1].cutSize << std::endl;
+    for (int i = 0; i < 2; i++){
+        fp << "G" << (i + 1) << " " << m_groups.m_counts[i] << std::endl;
+        Cell *cell = m_groups[i];
+        while (cell != nullptr){
+            fp << "c" << cell->m_number << " ";
+            cell = cell->m_groupNext;
+        }
+        fp << ";";
+        if (i != 1) fp << std::endl;
+    }
+    fp.close();
+}
+
+void FMAlgo::printNetsInfo(){
+    std::cout << "Balance Ratio = " << m_balanceRatio << std::endl;
+    for (int i = 0; i < m_nets.size(); i++){
+        std::cout << "NET" << m_nets[i]->m_number << "  ";
+        m_nets[i]->printInfo();
+    }
+    END_LINE;
+}
+
+void FMAlgo::printCellsInfo(){
+    std::cout << "Max Pin Number: " << m_nPinMax << std::endl;
+    for (int i = 0; i < m_cells.size(); i++){
+        std::cout << "CELL" << m_cells[i]->m_number << "  ";
+        m_cells[i]->printInfo();
+    }
+    END_LINE;
+}
+
+void FMAlgo::printGroupsInfo(){
+    Cell *p = m_groups[0];
+    std::cout << "GROUP1  ";
+    while (p){
+        std::cout << "c" << p->m_number << " ";
+        p = p->m_groupNext;
+    }
+    END_LINE;
+
+    p = m_groups[1];
+    std::cout << "GROUP2  ";
+    while (p){
+        std::cout << "c" << p->m_number << " ";
+        p = p->m_groupNext;
+    }
+    END_LINE;
+    END_LINE;
+}
+
+void FMAlgo::printGainsInfo(){
+    m_gains.printInfo();
+}
+
+void FMAlgo::printLinksInfo(){
+    LOG("Group Links:");
+    for (Cell *cell : m_cells){
+        int prev = (cell->m_groupPrev? cell->m_groupPrev->m_number: 0);
+        int next = (cell->m_groupNext? cell->m_groupNext->m_number: 0);
+        std::cout << "c" << prev << " <- " << "c" << cell->m_number << " -> " << "c" << next << std::endl;
+    }
+    LOG("Gain Links:");
+    for (Cell *cell : m_cells){
+        int prev = (cell->m_gainPrev? cell->m_gainPrev->m_number: 0);
+        int next = (cell->m_gainNext? cell->m_gainNext->m_number: 0);
+        std::cout << "c" << prev << " <- " << "c" << cell->m_number << " -> " << "c" << next;
+        if (cell->m_isLocked)
+            std::cout << " (LOCK)";
+        
+        END_LINE;
+    }
+    END_LINE;
+}
+
+void FMAlgo::printMovesInfo(){
+    DASH_LINE;
+    LOG("| Move | Cell | Gain | CumGain | CutSize |");
+    int i = 1;
+    for (const Move &move : m_moveRecords){
+        printf("%5d  %5d  %5d   %5d     %5d  \n", i, move.cell->m_number, move.gain, move.cumGain, move.cutSize);
+        i++;
+    }
+    DASH_LINE;
+    END_LINE;
+}
+
+void FMAlgo::seperateGroups(){
+
+    resetGroups();
+
+    int nCell = m_cells.size();
+
+#if HALF_INIT_GROUP == 0
+    m_groups.m_startCells[0] = m_cells[0];
+    m_groups.m_startCells[1] = nullptr;
+
+    m_groups.m_startCells[0]->m_groupPrev = nullptr;
+
+    m_cells[0]->m_group = 0;
+
+    m_groups.m_counts[0] = nCell;
+    m_groups.m_counts[1] = 0;
+    for (int i = 1; i < nCell; i++){
+        m_cells[i]->m_group = 0;
+        m_cells[i - 1]->m_groupNext = m_cells[i];
+        m_cells[i]->m_groupPrev = m_cells[i - 1];
+    }
+#else
+    int halfNCell = nCell / 2;
+
+    m_groups.m_startCells[0] = m_cells[0];
+    m_groups.m_startCells[1] = m_cells[halfNCell];
+
+    m_groups.m_startCells[0]->m_groupPrev = nullptr;
+    m_groups.m_startCells[1]->m_groupPrev = nullptr;
+
+    m_cells[0]->m_group = 0;
+    m_cells[halfNCell]->m_group = 1;
+
+    m_groups.m_counts[0] = halfNCell;
+    m_groups.m_counts[1] = nCell - halfNCell;
+
+    for (int i = 1; i < halfNCell; i++){
+        m_cells[i]->m_group = 0;
+        m_cells[i - 1]->m_groupNext = m_cells[i];
+        m_cells[i]->m_groupPrev = m_cells[i - 1];
+    }
+    for (int i = halfNCell + 1; i < nCell; i++){
+        m_cells[i]->m_group = 1;
+        m_cells[i - 1]->m_groupNext = m_cells[i];
+        m_cells[i]->m_groupPrev = m_cells[i - 1];
+    }
+#endif
+}
+
+void FMAlgo::buildNPinMaxInfo(){
+    for (Cell *cell : m_cells){
+        if (cell->m_nPin > m_nPinMax)
+            m_nPinMax = cell->m_nPin;
+    }
+    m_gains.setNPinMax(m_nPinMax);
+}
+
+void FMAlgo::buildGainArray(){
+
+    resetGains();
+
+    for (Cell *cell : m_cells){
+        int F, T;
+        cell->getFromToGroups(F, T);
+        for (Net* net : cell->m_nets){
+            int Fn, Tn;
+            net->getGroupCounts(F, T, Fn, Tn);
+            if      (Fn == 1) cell->m_gain++;
+            else if (Tn == 0) cell->m_gain--;
+        }
+        m_gains.addCell(cell);
+    }
+}
+
+bool FMAlgo::isConstrained(Cell *cell){
+    int group = cell->m_group;
+    float n0 = static_cast<float>(m_groups.m_counts[0] + (group == 0? -1: 1));
+    float lower = 0.5f * (1.f - m_balanceRatio) * static_cast<float>(m_groups.m_counts[0] + m_groups.m_counts[1]);
+    float upper = 0.5f * (1.f + m_balanceRatio) * static_cast<float>(m_groups.m_counts[0] + m_groups.m_counts[1]);
+    return (n0 >= lower) && (n0 <= upper);
+}
+
+Cell* FMAlgo::decideWhichCellToMove(){
+    for (int i = m_gains.length() - 1; i > -1; i--){
+        Cell *cell = m_gains.m_cellLists[i];
+        while (cell != nullptr){
+            if (isConstrained(cell) && !cell->m_isLocked)
+                return cell;
+            cell = cell->m_gainNext;
+        }
+    }
+    return nullptr;
+}
+
+void FMAlgo::lockCell(Cell *cell){
+    cell->m_isLocked = true;
+    m_gains.removeCell(cell);
+}
+
+void FMAlgo::recordMove(Cell* movedCell){
+    m_moveRecords.emplace_back(
+        movedCell,
+        movedCell->m_gain,
+        (m_moveRecords.size() == 0? 0: m_moveRecords.back().cumGain) + movedCell->m_gain,
+        getCutSize()
+    );
+}
+
+void FMAlgo::moveCell(Cell* movedCell, bool isReplay){
+    // Move the cell:
+    m_groups.moveCell(movedCell);
+    if (isReplay) 
+        return;
+
+    // Lock moved cell:
+    lockCell(movedCell);
+    
+    // Record the move:
+    recordMove(movedCell);
+
+    // Update gains:
+    int F, T;
+    movedCell->getFromToGroups(T, F); // Already moved cell, so flip the F & T.
+
+    for (Net* net : movedCell->m_nets){
+        int Fn, Tn;
+        net->getGroupCounts(F, T, Fn, Tn);
+        Fn++; Tn--;  // Already moved cell, so Fn & Tn are the number after moving the cell.
+        
+        if (Tn == 0){
+            for (Cell* cell : net->m_cells)
+                if (!cell->m_isLocked)
+                    m_gains.updateCell(cell, 1);
+        } 
+        else if (Tn == 1){
+            for (Cell* cell : net->m_cells)
+                if (cell->m_group == T && !cell->m_isLocked){
+                    m_gains.updateCell(cell, -1);
+                    break; // There is only one cell in the T-group.
+                }
+        }
+
+        Fn--; Tn++;
+
+        if (Fn == 0){
+            for (Cell* cell : net->m_cells)
+                if (!cell->m_isLocked)
+                    m_gains.updateCell(cell, -1);
+        }
+        else if (Fn == 1){
+            for (Cell* cell : net->m_cells)
+                if (cell->m_group == F && !cell->m_isLocked){
+                    m_gains.updateCell(cell, 1);
+                    break; // There is only one cell in the F-group.
+                }
+        }
+    }
+}
+
+void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain){
+    int kthMove_, maxGain_ = -1;
+    int i = 1;
+    for (const Move &move : m_moveRecords){
+        if (move.cumGain > maxGain_){
+            maxGain_ = move.cumGain;
+            kthMove_ = i;
+        }
+        i++;
+    }
+    kthMove = kthMove_; maxGain = maxGain_;
+}
+
+void FMAlgo::resetGroups(){
+    for (Cell *cell : m_cells)
+        cell->m_groupPrev = cell->m_groupNext = nullptr;
+    
+    m_groups.clear();
+}
+
+void FMAlgo::resetGains(){
+    for (Cell *cell : m_cells){
+        cell->m_gain = 0;
+        cell->m_isLocked = false;
+        cell->m_gainPrev = cell->m_gainNext = nullptr;
+    }
+    m_gains.clear();
+}
+
+void FMAlgo::replay(int kthMove){
+    for(int i = m_moveRecords.size() - 1; i > kthMove - 1; i--){
+        moveCell(m_moveRecords[i].cell, true);
+    }
+}
+
+int FMAlgo::getCutSize(){
+    int cutSize = 0;
+    for (Net *net : m_nets)
+        if (net->isCut())
+            cutSize++;
+    
+    return cutSize;
+}

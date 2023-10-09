@@ -7,8 +7,6 @@ To run the code:
 
 >> ./Lab1 [input_file] [output_file]
 
- OR
-
 
 To build and run the code:
 

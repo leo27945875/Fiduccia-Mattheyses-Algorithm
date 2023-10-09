@@ -17,3 +17,8 @@ test: test.cpp
 run:
 	make
 	./Lab1 data/input0.txt data/output0.txt
+
+push:
+	git add .
+	git commit -m "Commit"
+	git push origin master

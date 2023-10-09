@@ -160,6 +160,7 @@ void FMAlgo::outputResult(std::string &outputFile, int kthMove){
     fp.close();
 }
 
+#if DEBUG == 1
 void FMAlgo::printNetsInfo(){
     std::cout << "Balance Ratio = " << m_balanceRatio << std::endl;
     for (int i = 0; i < m_nets.size(); i++){
@@ -232,6 +233,7 @@ void FMAlgo::printMovesInfo(){
     DASH_LINE;
     END_LINE;
 }
+#endif
 
 void FMAlgo::seperateGroups(){
 

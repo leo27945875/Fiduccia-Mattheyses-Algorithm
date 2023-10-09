@@ -3,12 +3,12 @@
 
 To build the code:
 
->> make
+    >> make
 
 To run the code:
 
->> ./Lab1 [input_file] [output_file]
+    >> ./Lab1 [input_file] [output_file]
 
 To build and run the code:
 
->> make run input=[input_file] output=[output_file]
+    >> make run input=[input_file] output=[output_file]

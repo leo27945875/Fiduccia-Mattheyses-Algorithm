@@ -11,12 +11,12 @@ clean:
 	rm *.o Lab1 test
 
 test: test.cpp
-	g++ test.cpp -o test
-	./test
+	make
+	./Lab1 data/input0.txt data/output0.txt
 
 run:
 	make
-	./Lab1 data/input0.txt data/output0.txt
+	./Lab1 $(input) $(output)
 
 push:
 	git add .

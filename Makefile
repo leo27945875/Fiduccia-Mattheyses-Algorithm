@@ -10,11 +10,11 @@ partition.o: partition.cpp
 clean:
 	rm *.o Lab1 test
 
-test: test.cpp
+test: *.cpp structure.o partition.o include/*.hpp
 	make
 	./Lab1 data/input0.txt data/output0.txt
 
-run:
+run: *.cpp structure.o partition.o include/*.hpp
 	make
 	./Lab1 $(input) $(output)
 
@@ -22,3 +22,6 @@ push:
 	git add .
 	git commit -m "Commit"
 	git push origin master
+
+check:
+	./SolutionChecker/SolutionChecker ./data/input0.txt ./data/output0.txt

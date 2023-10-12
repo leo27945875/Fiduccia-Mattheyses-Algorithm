@@ -12,7 +12,7 @@ clean:
 
 test: *.cpp structure.o partition.o include/*.hpp
 	make
-	./Lab1 data/input0.txt data/output0.txt
+	./Lab1 data/input0.in data/output0.out
 
 run: *.cpp structure.o partition.o include/*.hpp
 	make
@@ -24,4 +24,4 @@ push:
 	git push origin master
 
 check:
-	./SolutionChecker/SolutionChecker ./data/input0.txt ./data/output0.txt
+	./SolutionChecker/SolutionChecker ./data/input0.in ./data/output0.out

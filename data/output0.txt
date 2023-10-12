@@ -1,5 +1,0 @@
-Cutsize = 2
-G1 4
-c6 c5 c3 c1 ;
-G2 2
-c2 c4 ;

@@ -30,7 +30,7 @@ FMAlgo::FMAlgo(std::string inputFile){
 }
 
 FMAlgo::~FMAlgo(){
-
+    /* TODO: Delete heap objects */
 }
 
 void FMAlgo::run(std::string outputFile, unsigned int maxLoop){

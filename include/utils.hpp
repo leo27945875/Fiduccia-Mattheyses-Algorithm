@@ -14,7 +14,6 @@
     #define DDASH_LINE std::cout << "==============================================================" << std::endl
     #define DASH_LINE std::cout << "--------------------------------------------------------------" << std::endl
     #define MOVE_INFO(x) std::cout << "Move " << x->m_number << "  (from: " << (x->m_group + 1) << " to: " << ((!x->m_group) + 1) << ")" << std::endl
-    #define AAA LOG("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 #else
     #define LOG(x) 
     #define LOGKV(x, y) 
@@ -27,3 +26,5 @@
     #define DASH_LINE 
     #define MOVE_INFO(x) 
 #endif
+ 
+#define FIXLOG(x) std::cout << x << std::endl

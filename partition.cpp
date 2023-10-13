@@ -140,7 +140,7 @@ void FMAlgo::readInputData(std::string inputFile){
 
     m_moveRecords.reserve(m_cells.size());
 
-    std::cout << "\nFinished data reading." << std::endl;
+    FIXLOG("\nFinished data reading.");
 }
 
 void FMAlgo::outputResult(std::string &outputFile, int kthMove){
@@ -281,6 +281,7 @@ void FMAlgo::seperateGroups(){
         m_cells[i]->m_groupPrev = m_cells[i - 1];
     }
 #endif
+    FIXLOG("\nFinished seperating group."); 
 }
 
 void FMAlgo::buildNPinMaxInfo(){
@@ -289,6 +290,7 @@ void FMAlgo::buildNPinMaxInfo(){
             m_nPinMax = cell->m_nPin;
     }
     m_gains.setNPinMax(m_nPinMax);
+    FIXLOG("\nFinished setting nPinMax info."); 
 }
 
 void FMAlgo::buildGainArray(){
@@ -306,6 +308,7 @@ void FMAlgo::buildGainArray(){
         }
         m_gains.addCell(cell);
     }
+    FIXLOG("\nFinished initializing gain bucket list."); 
 }
 
 bool FMAlgo::isConstrained(Cell *cell){
@@ -407,6 +410,7 @@ void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain){
 }
 
 void FMAlgo::resetGroups(){
+    printCellsInfo();
     for (Cell *cell : m_cells)
         cell->m_groupPrev = cell->m_groupNext = nullptr;
     

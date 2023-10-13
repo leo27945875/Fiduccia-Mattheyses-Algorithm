@@ -1,7 +1,7 @@
 FILE_NUM = $(i)
 
 
-main: *.cpp structure.o partition.o include/*.hpp
+main: *.cpp include/*.hpp structure.o partition.o
 	g++ main.cpp structure.o partition.o -o Lab1
 
 structure.o: structure.cpp
@@ -13,11 +13,11 @@ partition.o: partition.cpp
 clean:
 	rm *.o Lab1
 
-test: *.cpp structure.o partition.o include/*.hpp
+test: *.cpp include/*.hpp structure.o partition.o
 	make
 	./Lab1 ./data/input${i}.in ./data/output${i}.out
 
-run: *.cpp structure.o partition.o include/*.hpp
+run: *.cpp include/*.hpp structure.o partition.o
 	make
 	./Lab1 $(input) $(output)
 

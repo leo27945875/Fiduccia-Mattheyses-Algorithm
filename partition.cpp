@@ -309,7 +309,7 @@ void FMAlgo::buildGainArray(){
         }
         m_gains.addCell(cell);
     }
-    FIXLOG("\nFinished initializing gain bucket list."); 
+    FIXLOG("\nFinished building gain bucket list."); 
 }
 
 bool FMAlgo::isConstrained(Cell *cell){
@@ -411,7 +411,6 @@ void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain){
 }
 
 void FMAlgo::resetGroups(){
-    printCellsInfo();
     for (Cell *cell : m_cells)
         cell->m_groupPrev = cell->m_groupNext = nullptr;
     

@@ -1,6 +1,6 @@
 #pragma once
 
-#define DEBUG 1
+#define DEBUG 0
 #define HALF_INIT_GROUP 1
 
 #if DEBUG == 1

@@ -8,7 +8,6 @@
 int main(int argc, char *argv[]){
     if (argc != 3)
         throw std::runtime_error("[main] There must be 2 arguments (input & output filenames).");
-
     std::string inputFile  = argv[1];
     std::string outputFile = argv[2];
 

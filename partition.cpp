@@ -11,7 +11,7 @@
 
 
 FMAlgo::FMAlgo(std::string inputFile){
-    readInputData("data/input0.txt");
+    readInputData(inputFile);
     seperateGroups();
     buildNPinMaxInfo();
     buildGainArray();
@@ -34,7 +34,7 @@ FMAlgo::~FMAlgo(){
 }
 
 void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
-    LOG("\nStart running ... \n");
+    std::cout << "\nStart running ... " << std::endl;
     unsigned int innerLoop, outerLoop = 1;
     while (outerLoop <= maxLoop){
         OUTER_LOOP_START(outerLoop);
@@ -95,20 +95,19 @@ void FMAlgo::readInputData(std::string inputFile){
     // Purely build cell & net vector from file:
     std::ifstream fp(inputFile);
     std::string line, word;
+
+    getline(fp, line);
+    m_balanceRatio = std::stof(line);
+
     int maxCellNumber = 0, maxNetNumber = 0;
-    while (getline(fp, line)){
+    while (getline(fp, line, ';')){
         std::stringstream ss(line);
         Cell *nowCell = nullptr;
         Net  *nowNet  = nullptr;
-        int wordCount = 0;
         while (ss >> word)
         {
-            if (word == ";") break;
-            if (wordCount == 0){
-                if (word != "NET")
-                    m_balanceRatio = std::stof(word);
-            }
-            else if (wordCount == 1){
+            if (word == "NET") continue;;
+            if (word[0] == 'n'){
                 int netNumber = std::stoi(word.substr(1));
                 if (netNumber > maxNetNumber){
                     maxNetNumber = netNumber;
@@ -135,13 +134,13 @@ void FMAlgo::readInputData(std::string inputFile){
                 nowCell->m_number = cellNumber;
                 nowCell->m_nPin++;
             }
-            wordCount++;
         }
     }
     fp.close();
 
-    // Move recorder:
     m_moveRecords.reserve(m_cells.size());
+
+    std::cout << "\nFinished data reading." << std::endl;
 }
 
 void FMAlgo::outputResult(std::string &outputFile, int kthMove){

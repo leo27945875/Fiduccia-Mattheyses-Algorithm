@@ -30,7 +30,8 @@ FMAlgo::FMAlgo(std::string inputFile){
 }
 
 FMAlgo::~FMAlgo(){
-    /* TODO: Delete heap objects */
+    for (Cell *cell : m_cells) delete cell;
+    for (Net *net : m_nets) delete net;
 }
 
 void FMAlgo::run(std::string outputFile, unsigned int maxLoop){

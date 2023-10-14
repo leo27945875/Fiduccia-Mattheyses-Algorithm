@@ -24,14 +24,6 @@ void Net::getGroupCounts(int from, int to, int &Fn, int &Tn){
 
 bool Net::isCut(){
     return m_cellGroupCount[0] && m_cellGroupCount[1];
-    // int group = -1;
-    // for (Cell *cell : m_cells){
-    //     if (group == -1)
-    //         group = cell->m_group;
-    //     else if (cell->m_group != group)
-    //         return true;
-    // }
-    // return false;
 }
 
 

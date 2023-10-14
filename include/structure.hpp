@@ -12,6 +12,7 @@ class Net{
 public:
     std::unordered_set<Cell*> m_cells;
     int m_number;
+    int m_cellGroupCount[2] = {0, 0};
 
     Net() = default;
     void printInfo();
@@ -39,6 +40,9 @@ public:
     Cell() = default;
     void printInfo();
     void addNet(Net *net);
+    void updateNetsFGroupCount(int n);
+    void updateNetsTGroupCount(int n);
+    void updateNetsGroupsCount(int fn, int tn);
     void getFromToGroups(int &from, int &to);
 };
 

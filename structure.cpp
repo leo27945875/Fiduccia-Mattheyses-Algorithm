@@ -5,6 +5,7 @@
 
 
 void Net::printInfo(){
+    std::cout << "Counts: (" << m_cellGroupCount[0] << ", " << m_cellGroupCount[1] << ") ";
     std::cout << "Cells: ";
     for (Cell* cell : m_cells){
         std::cout << "c" << cell->m_number << "<" << cell << ">" << "(P<" << cell->m_nPin << ">, " << "G<" << cell->m_group << ">) ";
@@ -17,15 +18,18 @@ void Net::addCell(Cell *cell){
 }
 
 void Net::getGroupCounts(int from, int to, int &Fn, int &Tn){
-    int fromN = 0, toN = 0;
-    for (Cell *cell : m_cells)
-        if (cell->m_group == from) 
-            fromN++;
-        else
-            toN++;
+    Fn = m_cellGroupCount[from];
+    Tn = m_cellGroupCount[to];
+
+    // int fromN = 0, toN = 0;
+    // for (Cell *cell : m_cells)
+    //     if (cell->m_group == from) 
+    //         fromN++;
+    //     else
+    //         toN++;
     
-    Fn = fromN; 
-    Tn = toN;
+    // Fn = fromN; 
+    // Tn = toN;
 }
 
 bool Net::isCut(){
@@ -50,6 +54,22 @@ void Cell::printInfo(){
 
 void Cell::addNet(Net *net){
     m_nets.insert(net);
+}
+
+void Cell::updateNetsFGroupCount(int n){
+    for (Net *net : m_nets)
+        net->m_cellGroupCount[m_group] += n;
+}
+
+void Cell::updateNetsTGroupCount(int n){
+    int g = static_cast<int>(!m_group);
+    for (Net *net : m_nets)
+        net->m_cellGroupCount[g] += n;
+}
+
+void Cell::updateNetsGroupsCount(int fn, int tn){
+    updateNetsFGroupCount(fn);
+    updateNetsTGroupCount(tn);
 }
 
 void Cell::getFromToGroups(int &from, int &to){

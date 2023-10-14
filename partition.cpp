@@ -254,17 +254,18 @@ void FMAlgo::seperateGroups(){
     groupSetStartCells(m_groups, m_cells[0], m_cells[halfNCell]);
 
     m_cells[0]->m_group = 0;
+    m_cells[0]->updateNetsFGroupCount(1);
+
     m_cells[halfNCell]->m_group = 1;
+    m_cells[halfNCell]->updateNetsFGroupCount(1);
 
     m_groups.m_counts[0] = halfNCell;
     m_groups.m_counts[1] = nCell - halfNCell;
 
-    for (int i = 1; i < halfNCell; i++){
-        m_cells[i]->m_group = 0;
-        groupLinkCell(m_cells[i - 1], m_cells[i]);
-    }
-    for (int i = halfNCell + 1; i < nCell; i++){
-        m_cells[i]->m_group = 1;
+    for (int i = 1; i < nCell; i++){
+        if (i == halfNCell) continue;
+        m_cells[i]->m_group = (i < halfNCell)? 0: 1;
+        m_cells[i]->updateNetsFGroupCount(1);
         groupLinkCell(m_cells[i - 1], m_cells[i]);
     }
 
@@ -334,6 +335,7 @@ void FMAlgo::recordMove(Cell* movedCell){
 
 void FMAlgo::moveCell(Cell* movedCell, bool isReplay){
     // Move the cell:
+    movedCell->updateNetsGroupsCount(-1, 1);
     m_groups.moveCell(movedCell);
     if (isReplay) 
         return;

@@ -57,15 +57,17 @@ void Cell::getFromToGroups(int &from, int &to){
     else             {from = 1; to = 0;}
 }
 
-
+#if DEBUG == 1
 Cell* Groups::operator[](int groupIdx){
     return m_startCells[groupIdx];
 }
+#endif
 
 void Groups::moveCell(Cell *cell){
     int F, T;
     cell->getFromToGroups(F, T);
 
+#if DEBUG == 1
     if(cell->m_groupNext) cell->m_groupNext->m_groupPrev = cell->m_groupPrev;
     if(cell->m_groupPrev) cell->m_groupPrev->m_groupNext = cell->m_groupNext;
     if(m_startCells[F] == cell) 
@@ -75,14 +77,18 @@ void Groups::moveCell(Cell *cell){
     cell->m_groupNext = m_startCells[T];
     if(m_startCells[T]) m_startCells[T]->m_groupPrev = cell;
     m_startCells[T] = cell;
+#endif
 
     cell->m_group = T;
     m_counts[F]--;
     m_counts[T]++;
 }
 
+
 void Groups::clear(){
+#if DEBUG == 1
     std::fill(m_startCells, m_startCells + 1, nullptr);
+#endif
     std::fill(m_counts, m_counts + 1, 0);
 }
 

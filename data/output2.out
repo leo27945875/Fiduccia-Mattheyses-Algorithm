@@ -1,5 +1,5 @@
-Cutsize = 7
-G1 6
-c4 c2 c5 c6 c3 c8 ;
-G2 6
-c1 c11 c10 c7 c9 c12 ;
+Cutsize = 6
+G1 9
+c1 c2 c4 c7 c8 c9 c10 c11 c12 ;
+G2 3
+c3 c5 c6 ;

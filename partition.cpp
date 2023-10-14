@@ -4,9 +4,11 @@
 #include <vector>
 #include <string>
 #include <limits>
+#include <unordered_set>
 
 #include "include/structure.hpp"
 #include "include/partition.hpp"
+#include "include/inlines.hpp"
 #include "include/utils.hpp"
 
 
@@ -103,8 +105,9 @@ void FMAlgo::readInputData(std::string inputFile){
     int maxCellNumber = 0, maxNetNumber = 0;
     while (getline(fp, line, ';')){
         std::stringstream ss(line);
+        std::unordered_set<int> lastCellNumbers;
         Cell *nowCell = nullptr;
-        Net  *nowNet  = nullptr;
+        Net  *nowNet = nullptr;
         while (ss >> word)
         {
             if (word == "NET") continue;;
@@ -122,6 +125,9 @@ void FMAlgo::readInputData(std::string inputFile){
             }
             else{
                 int cellNumber = std::stoi(word.substr(1));
+                if (lastCellNumbers.count(cellNumber))
+                    continue;
+
                 if (cellNumber > maxCellNumber){
                     maxCellNumber = cellNumber;
                     m_cells.resize(maxCellNumber);
@@ -134,6 +140,7 @@ void FMAlgo::readInputData(std::string inputFile){
                 nowCell->addNet(nowNet);
                 nowCell->m_number = cellNumber;
                 nowCell->m_nPin++;
+                lastCellNumbers.insert(cellNumber);
             }
         }
     }
@@ -146,17 +153,19 @@ void FMAlgo::readInputData(std::string inputFile){
 
 void FMAlgo::outputResult(std::string &outputFile, int kthMove){
     std::ofstream fp(outputFile);
+    std::stringstream cellss[2];
+
     fp << "Cutsize = " << m_moveRecords[kthMove - 1].cutSize << std::endl;
+
+    for (Cell *cell : m_cells)
+        cellss[cell->m_group] << "c" << cell->m_number << " ";
+
     for (int i = 0; i < 2; i++){
-        fp << "G" << (i + 1) << " " << m_groups.m_counts[i] << std::endl;
-        Cell *cell = m_groups[i];
-        while (cell != nullptr){
-            fp << "c" << cell->m_number << " ";
-            cell = cell->m_groupNext;
-        }
-        fp << ";";
-        if (i != 1) fp << std::endl;
+        cellss[i] << ";";
+        fp << "G" << (i + 1) << " " << m_groups.m_counts[i]  << std::endl;
+        fp << cellss[i].str() << std::endl;
     }
+
     fp.close();
 }
 
@@ -240,30 +249,9 @@ void FMAlgo::seperateGroups(){
     resetGroups();
 
     int nCell = m_cells.size();
-
-#if HALF_INIT_GROUP == 0
-    m_groups.m_startCells[0] = m_cells[0];
-    m_groups.m_startCells[1] = nullptr;
-
-    m_groups.m_startCells[0]->m_groupPrev = nullptr;
-
-    m_cells[0]->m_group = 0;
-
-    m_groups.m_counts[0] = nCell;
-    m_groups.m_counts[1] = 0;
-    for (int i = 1; i < nCell; i++){
-        m_cells[i]->m_group = 0;
-        m_cells[i - 1]->m_groupNext = m_cells[i];
-        m_cells[i]->m_groupPrev = m_cells[i - 1];
-    }
-#else
     int halfNCell = nCell / 2;
 
-    m_groups.m_startCells[0] = m_cells[0];
-    m_groups.m_startCells[1] = m_cells[halfNCell];
-
-    m_groups.m_startCells[0]->m_groupPrev = nullptr;
-    m_groups.m_startCells[1]->m_groupPrev = nullptr;
+    groupSetStartCells(m_groups, m_cells[0], m_cells[halfNCell]);
 
     m_cells[0]->m_group = 0;
     m_cells[halfNCell]->m_group = 1;
@@ -273,15 +261,13 @@ void FMAlgo::seperateGroups(){
 
     for (int i = 1; i < halfNCell; i++){
         m_cells[i]->m_group = 0;
-        m_cells[i - 1]->m_groupNext = m_cells[i];
-        m_cells[i]->m_groupPrev = m_cells[i - 1];
+        groupLinkCell(m_cells[i - 1], m_cells[i]);
     }
     for (int i = halfNCell + 1; i < nCell; i++){
         m_cells[i]->m_group = 1;
-        m_cells[i - 1]->m_groupNext = m_cells[i];
-        m_cells[i]->m_groupPrev = m_cells[i - 1];
+        groupLinkCell(m_cells[i - 1], m_cells[i]);
     }
-#endif
+
     FIXLOG("\nFinished seperating group."); 
 }
 
@@ -411,9 +397,10 @@ void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain){
 }
 
 void FMAlgo::resetGroups(){
+#if DEBUG == 1
     for (Cell *cell : m_cells)
         cell->m_groupPrev = cell->m_groupNext = nullptr;
-    
+#endif
     m_groups.clear();
 }
 

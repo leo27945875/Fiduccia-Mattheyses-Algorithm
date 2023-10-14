@@ -1,7 +1,8 @@
 #pragma once
 
-#include <set>
+#include <unordered_set>
 #include <vector>
+#include "utils.hpp"
 
 class Net;
 class Cell;
@@ -9,7 +10,7 @@ class Cell;
 
 class Net{
 public:
-    std::set<Cell*> m_cells;
+    std::unordered_set<Cell*> m_cells;
     int m_number;
 
     Net() = default;
@@ -22,15 +23,18 @@ public:
 
 class Cell{
 public:
-    std::set<Net*> m_nets;
+    std::unordered_set<Net*> m_nets;
     int m_group;
     int m_number;
     int m_nPin = 0;
 
     int m_gain = 0;
     bool m_isLocked = false;
-    Cell *m_groupPrev = nullptr, *m_groupNext = nullptr;
     Cell *m_gainPrev = nullptr, *m_gainNext = nullptr;
+
+#if DEBUG == 1
+    Cell *m_groupPrev = nullptr, *m_groupNext = nullptr;
+#endif
 
     Cell() = default;
     void printInfo();
@@ -41,8 +45,11 @@ public:
 
 class Groups{
 public:
-    Cell *m_startCells[2] = {nullptr, nullptr};
     int m_counts[2] = {0, 0};
+
+#if DEBUG == 1
+    Cell *m_startCells[2] = {nullptr, nullptr};
+#endif
 
     Groups() = default;
     Cell* operator[](int groupIdx);

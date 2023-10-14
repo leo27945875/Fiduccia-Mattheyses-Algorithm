@@ -20,27 +20,18 @@ void Net::addCell(Cell *cell){
 void Net::getGroupCounts(int from, int to, int &Fn, int &Tn){
     Fn = m_cellGroupCount[from];
     Tn = m_cellGroupCount[to];
-
-    // int fromN = 0, toN = 0;
-    // for (Cell *cell : m_cells)
-    //     if (cell->m_group == from) 
-    //         fromN++;
-    //     else
-    //         toN++;
-    
-    // Fn = fromN; 
-    // Tn = toN;
 }
 
 bool Net::isCut(){
-    int group = -1;
-    for (Cell *cell : m_cells){
-        if (group == -1)
-            group = cell->m_group;
-        else if (cell->m_group != group)
-            return true;
-    }
-    return false;
+    return m_cellGroupCount[0] && m_cellGroupCount[1];
+    // int group = -1;
+    // for (Cell *cell : m_cells){
+    //     if (group == -1)
+    //         group = cell->m_group;
+    //     else if (cell->m_group != group)
+    //         return true;
+    // }
+    // return false;
 }
 
 

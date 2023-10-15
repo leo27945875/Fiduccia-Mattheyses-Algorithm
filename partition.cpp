@@ -70,28 +70,29 @@ void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
         DDASH_LINE;
         printMovesInfo();
 #endif
-        findMaxGainKthMove(m_kthMove, m_MaxCumGain);
+        Cell* maxMovedCell;
+        findMaxGainKthMove(m_kthMove, m_MaxCumGain, maxMovedCell);
         replay(m_kthMove);
         buildGainArray();
+        FIXLOGKV("Max Move", m_kthMove);
+        FIXLOGKV("Max CumGain", m_MaxCumGain);
+        FIXLOGKV("Max Moved Cell", maxMovedCell->m_number);
+        FIXLOGKV("Moved Cell Group", maxMovedCell->m_group); END_LINE;
 
 #if DEBUG == 1
-        LOGKV("Max Move", m_kthMove);
-        LOGKV("Max CumGain", m_MaxCumGain); END_LINE;
         printNetsInfo();
         printCellsInfo();
         printGroupsInfo();
         printGainsInfo();
         printLinksInfo();
 #endif
+        m_moveRecords.clear();
         if (m_MaxCumGain <= 0) break;
-        else{
+        else
             outerLoop++;
-            m_moveRecords.clear();
-        }
-
     }
 
-    LOGKV("\nStop, total loop", outerLoop);
+    FIXLOGKV("\nStop, total loop", outerLoop);
     if (outputFile.size() > 0)
         outputResult(outputFile, m_kthMove);
 }
@@ -107,7 +108,7 @@ void FMAlgo::readInputData(std::string inputFile){
     int maxCellNumber = 0, maxNetNumber = 0;
     while (getline(fp, line, ';')){
         std::stringstream       ss(line);
-        std::unordered_set<int> lastCellNumbers;
+        std::unordered_set<int> lastCellNumbers, lastNetNumbers;
         Cell*                   nowCell = nullptr;
         Net*                    nowNet = nullptr;
         while (ss >> word)
@@ -115,6 +116,9 @@ void FMAlgo::readInputData(std::string inputFile){
             if (word == "NET") continue;;
             if (word[0] == 'n'){
                 int netNumber = std::stoi(word.substr(1));
+                if (lastNetNumbers.count(netNumber))
+                    break;
+
                 if (netNumber > maxNetNumber){
                     maxNetNumber = netNumber;
                     m_nets.resize(maxNetNumber);
@@ -124,6 +128,7 @@ void FMAlgo::readInputData(std::string inputFile){
 
                 nowNet = m_nets[netNumber - 1];
                 nowNet->m_number = netNumber;
+                lastNetNumbers.insert(netNumber);
             }
             else{
                 int cellNumber = std::stoi(word.substr(1));
@@ -387,17 +392,19 @@ void FMAlgo::moveCell(Cell* movedCell, bool isReplay){
     }
 }
 
-void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain){
-    int kthMove_, maxGain_ = -1;
-    int i = 1;
+void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain, Cell* &movedCell){
+    Cell* movedCell_;
+    int   kthMove_, maxGain_ = -1;
+    int   i = 1;
     for (const Move &move : m_moveRecords){
         if (move.cumGain > maxGain_){
-            maxGain_ = move.cumGain;
-            kthMove_ = i;
+            maxGain_   = move.cumGain;
+            kthMove_   = i;
+            movedCell_ = move.cell;
         }
         i++;
     }
-    kthMove = kthMove_; maxGain = maxGain_;
+    kthMove = kthMove_; maxGain = maxGain_; movedCell = movedCell_;
 }
 
 void FMAlgo::resetGroups(){

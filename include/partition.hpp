@@ -38,7 +38,7 @@ public:
     Cell* decideWhichCellToMove();
     void  moveCell(Cell* movedCell, bool isReplay = false);
 
-    void  findMaxGainKthMove(int &kthMove, int &maxGain);
+    void  findMaxGainKthMove(int &kthMove, int &maxGain, Cell* &movedCell);
     void  resetGroups();
     void  resetGains();
     void  replay(int kthMove);

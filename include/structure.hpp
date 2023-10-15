@@ -63,10 +63,10 @@ public:
 
 #if DEBUG == 1
     Cell* m_startCells[2] = {nullptr, nullptr};
+    Cell* operator[](int groupIdx);
 #endif
 
     Groups() = default;
-    Cell* operator[](int groupIdx);
     void  moveCell(Cell *cell);
     void  clear();
 };

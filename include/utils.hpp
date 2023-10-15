@@ -5,7 +5,6 @@
 #if DEBUG == 1
     #define LOG(x)              std::cout << x << std::endl
     #define LOGKV(x, y)         std::cout << x << " = " << y <<  std::endl
-    #define END_LINE            std::cout << std::endl
     #define LOOP_START(x)       std::cout << "========================== " << "Loop " << x << " ==========================\n" << std::endl
     #define INNER_LOOP_START(x) std::cout << "========================== " << "Inner Loop " << x << " ==========================\n" << std::endl
     #define OUTER_LOOP_START(x) std::cout << "============================ " << "Outer Loop " << x << " ============================\n" << std::endl
@@ -15,7 +14,6 @@
 #else
     #define LOG(x) 
     #define LOGKV(x, y) 
-    #define END_LINE 
     #define LOOP_START(x) 
     #define INNER_LOOP_START(x) 
     #define OUTER_LOOP_START(x) 
@@ -24,4 +22,6 @@
     #define MOVE_INFO(x) 
 #endif
  
-#define FIXLOG(x) std::cout << x << std::endl
+#define END_LINE       std::cout << std::endl
+#define FIXLOG(x)      std::cout << x << std::endl
+#define FIXLOGKV(x, y) std::cout << x << " = " << y <<  std::endl

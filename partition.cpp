@@ -18,6 +18,8 @@ FMAlgo::FMAlgo(std::string inputFile){
     buildNPinMaxInfo();
     buildGainArray();
 
+    m_initCutSize = getCutSize();
+
 #if DEBUG == 1
     END_LINE;
     LOG("===================== FM Algo Init Info =====================\n");
@@ -26,7 +28,7 @@ FMAlgo::FMAlgo(std::string inputFile){
     printGroupsInfo();
     printGainsInfo();
     printLinksInfo();
-    LOGKV("Init cutsize", getCutSize());
+    LOGKV("Init cutsize", m_initCutSize);
     END_LINE;
     DDASH_LINE;
     END_LINE;
@@ -39,7 +41,7 @@ FMAlgo::~FMAlgo(){
 }
 
 void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
-    std::cout << "\nStart running ... " << std::endl;
+    FIXLOG("\nStart running ... ");
     unsigned int innerLoop, outerLoop = 1;
     while (outerLoop <= maxLoop){
         OUTER_LOOP_START(outerLoop);
@@ -72,12 +74,16 @@ void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
 #endif
         Cell* maxMovedCell;
         findMaxGainKthMove(m_kthMove, m_MaxCumGain, maxMovedCell);
-        replay(m_kthMove);
-        buildGainArray();
         FIXLOGKV("Max Move", m_kthMove);
         FIXLOGKV("Max CumGain", m_MaxCumGain);
         FIXLOGKV("Max Moved Cell", maxMovedCell->m_number);
-        FIXLOGKV("Moved Cell Group", maxMovedCell->m_group); END_LINE;
+        FIXLOGKV("Moved Cell Group", maxMovedCell->m_group); 
+        FIXLOGKV("Moved Cell Gain", maxMovedCell->m_gain);
+        FIXLOGKV("N Cell G1", m_groups.m_counts[0]);
+        FIXLOGKV("N Cell G2", m_groups.m_counts[1]);
+        replay(m_kthMove);
+        buildGainArray();
+        END_LINE;
 
 #if DEBUG == 1
         printNetsInfo();
@@ -93,6 +99,8 @@ void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
     }
 
     FIXLOGKV("\nStop, total loop", outerLoop);
+    FIXLOGKV("Initial cut size", m_initCutSize);
+    FIXLOGKV("Final   cut size", m_moveRecords[m_kthMove - 1].cutSize);
     if (outputFile.size() > 0)
         outputResult(outputFile, m_kthMove);
 }
@@ -114,7 +122,7 @@ void FMAlgo::readInputData(std::string inputFile){
         Net*                    nowNet = nullptr;
         while (ss >> word)
         {
-            if (word == "NET") continue;;
+            if (word == "NET") continue;
             if (word[0] == 'n'){
                 int netNumber = std::stoi(word.substr(1));
                 if (lastNetNumbers.count(netNumber))
@@ -299,12 +307,12 @@ void FMAlgo::buildGainArray(){
         for (Net* net : cell->m_nets){
             int Fn, Tn;
             net->getGroupCounts(F, T, Fn, Tn);
-            if      (Fn == 1) cell->m_gain++;
-            else if (Tn == 0) cell->m_gain--;
+            if (Fn == 1) cell->m_gain++;
+            if (Tn == 0) cell->m_gain--;
         }
         m_gains.addCell(cell);
     }
-    FIXLOG("\nFinished building gain bucket list."); 
+    FIXLOG("\nFinished building gain bucket list.");
 }
 
 bool FMAlgo::isConstrained(Cell *cell){
@@ -395,7 +403,7 @@ void FMAlgo::moveCell(Cell* movedCell, bool isReplay){
 
 void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain, Cell* &movedCell){
     Cell* movedCell_;
-    int   kthMove_, maxGain_ = -1;
+    int   kthMove_, maxGain_ = INT_MIN;
     int   i = 1;
     for (const Move &move : m_moveRecords){
         if (move.cumGain > maxGain_){

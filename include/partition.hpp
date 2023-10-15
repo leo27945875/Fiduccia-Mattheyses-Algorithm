@@ -14,6 +14,7 @@ public:
     Groups             m_groups;
 
     int                m_nPinMax = 0;
+    int                m_initCutSize;
     float              m_balanceRatio;
 
     int                m_kthMove, m_MaxCumGain;

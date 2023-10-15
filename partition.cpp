@@ -106,9 +106,10 @@ void FMAlgo::readInputData(std::string inputFile){
     m_balanceRatio = std::stof(line);
 
     int maxCellNumber = 0, maxNetNumber = 0;
+    std::unordered_set<int> lastNetNumbers;
     while (getline(fp, line, ';')){
         std::stringstream       ss(line);
-        std::unordered_set<int> lastCellNumbers, lastNetNumbers;
+        std::unordered_set<int> lastCellNumbers;
         Cell*                   nowCell = nullptr;
         Net*                    nowNet = nullptr;
         while (ss >> word)

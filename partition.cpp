@@ -406,7 +406,7 @@ void FMAlgo::findMaxGainKthMove(int &kthMove, int &maxGain, Cell* &movedCell){
     int   kthMove_, maxGain_ = INT_MIN;
     int   i = 1;
     for (const Move &move : m_moveRecords){
-        if (move.cumGain > maxGain_){
+        if (move.cumGain >= maxGain_){
             maxGain_   = move.cumGain;
             kthMove_   = i;
             movedCell_ = move.cell;

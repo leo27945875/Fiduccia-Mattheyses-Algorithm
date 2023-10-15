@@ -26,6 +26,8 @@ FMAlgo::FMAlgo(std::string inputFile){
     printGroupsInfo();
     printGainsInfo();
     printLinksInfo();
+    LOGKV("Init cutsize", getCutSize());
+    END_LINE;
     DDASH_LINE;
     END_LINE;
 #endif
@@ -33,7 +35,7 @@ FMAlgo::FMAlgo(std::string inputFile){
 
 FMAlgo::~FMAlgo(){
     for (Cell *cell : m_cells) delete cell;
-    for (Net *net : m_nets) delete net;
+    for (Net  *net  : m_nets ) delete net ;
 }
 
 void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
@@ -97,17 +99,17 @@ void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
 void FMAlgo::readInputData(std::string inputFile){
     // Purely build cell & net vector from file:
     std::ifstream fp(inputFile);
-    std::string line, word;
+    std::string   line, word;
 
     getline(fp, line);
     m_balanceRatio = std::stof(line);
 
     int maxCellNumber = 0, maxNetNumber = 0;
     while (getline(fp, line, ';')){
-        std::stringstream ss(line);
+        std::stringstream       ss(line);
         std::unordered_set<int> lastCellNumbers;
-        Cell *nowCell = nullptr;
-        Net  *nowNet = nullptr;
+        Cell*                   nowCell = nullptr;
+        Net*                    nowNet = nullptr;
         while (ss >> word)
         {
             if (word == "NET") continue;;
@@ -152,7 +154,7 @@ void FMAlgo::readInputData(std::string inputFile){
 }
 
 void FMAlgo::outputResult(std::string &outputFile, int kthMove){
-    std::ofstream fp(outputFile);
+    std::ofstream     fp(outputFile);
     std::stringstream cellss[2];
 
     fp << "Cutsize = " << m_moveRecords[kthMove - 1].cutSize << std::endl;
@@ -300,7 +302,7 @@ void FMAlgo::buildGainArray(){
 }
 
 bool FMAlgo::isConstrained(Cell *cell){
-    int group = cell->m_group;
+    int   group = cell->m_group;
     float n0 = static_cast<float>(m_groups.m_counts[0] + (group == 0? -1: 1));
     float lower = 0.5f * (1.f - m_balanceRatio) * static_cast<float>(m_groups.m_counts[0] + m_groups.m_counts[1]);
     float upper = 0.5f * (1.f + m_balanceRatio) * static_cast<float>(m_groups.m_counts[0] + m_groups.m_counts[1]);
@@ -335,7 +337,7 @@ void FMAlgo::recordMove(Cell* movedCell){
 
 void FMAlgo::moveCell(Cell* movedCell, bool isReplay){
     // Move the cell:
-    movedCell->updateNetsGroupsCount(-1, 1);
+    movedCell->updateNetsGroupsCount();
     m_groups.moveCell(movedCell);
     if (isReplay) 
         return;
@@ -422,10 +424,5 @@ void FMAlgo::replay(int kthMove){
 }
 
 int FMAlgo::getCutSize(){
-    int cutSize = 0;
-    for (Net *net : m_nets)
-        if (net->isCut())
-            cutSize++;
-    
-    return cutSize;
+    return Net::s_cutSize;
 }

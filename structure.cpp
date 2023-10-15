@@ -17,6 +17,28 @@ void Net::addCell(Cell *cell){
     m_cells.insert(cell);
 }
 
+void Net::updateCut(){
+    bool nowIsCut = isCut();
+    if (nowIsCut != m_lastIsCut_){
+        if (nowIsCut)
+            s_cutSize++;
+        else
+            s_cutSize--;
+    }
+    m_lastIsCut_ = nowIsCut;
+}
+
+void Net::updateMove(int from, int to){
+    m_cellGroupCount[from]--;
+    m_cellGroupCount[to]++;
+    updateCut();
+}
+
+void Net::updateGroupCount(int group, int n){
+    m_cellGroupCount[group] += n;
+    updateCut();
+}
+
 void Net::getGroupCounts(int from, int to, int &Fn, int &Tn){
     Fn = m_cellGroupCount[from];
     Tn = m_cellGroupCount[to];
@@ -25,6 +47,8 @@ void Net::getGroupCounts(int from, int to, int &Fn, int &Tn){
 bool Net::isCut(){
     return m_cellGroupCount[0] && m_cellGroupCount[1];
 }
+
+int Net::s_cutSize = 0;
 
 
 void Cell::printInfo(){
@@ -41,18 +65,19 @@ void Cell::addNet(Net *net){
 
 void Cell::updateNetsFGroupCount(int n){
     for (Net *net : m_nets)
-        net->m_cellGroupCount[m_group] += n;
+        net->updateGroupCount(m_group, n);
 }
 
 void Cell::updateNetsTGroupCount(int n){
     int g = static_cast<int>(!m_group);
     for (Net *net : m_nets)
-        net->m_cellGroupCount[g] += n;
+        net->updateGroupCount(g, n);
 }
 
-void Cell::updateNetsGroupsCount(int fn, int tn){
-    updateNetsFGroupCount(fn);
-    updateNetsTGroupCount(tn);
+void Cell::updateNetsGroupsCount(){
+    int F = m_group, T = static_cast<int>(!m_group);
+    for (Net *net : m_nets)
+        net->updateMove(F, T);
 }
 
 void Cell::getFromToGroups(int &from, int &to){

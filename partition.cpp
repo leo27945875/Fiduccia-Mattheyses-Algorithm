@@ -74,6 +74,7 @@ void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
 #endif
         Cell* maxMovedCell;
         findMaxGainKthMove(m_kthMove, m_MaxCumGain, maxMovedCell);
+        replay(m_kthMove);
         FIXLOGKV("Max Move", m_kthMove);
         FIXLOGKV("Max CumGain", m_MaxCumGain);
         FIXLOGKV("Max Moved Cell", maxMovedCell->m_number);
@@ -81,7 +82,6 @@ void FMAlgo::run(std::string outputFile, unsigned int maxLoop){
         FIXLOGKV("Moved Cell Gain", maxMovedCell->m_gain);
         FIXLOGKV("N Cell G1", m_groups.m_counts[0]);
         FIXLOGKV("N Cell G2", m_groups.m_counts[1]);
-        replay(m_kthMove);
         buildGainArray();
         END_LINE;
 
